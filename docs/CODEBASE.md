@@ -1,0 +1,64 @@
+# Codebasis und Prüfoberfläche
+
+## Struktur
+
+| Pfad | Aufgabe |
+| --- | --- |
+| `index.html` | Deutschsprachige, semantische Oberfläche; neun normale kanonische Kataloglinks; Formulare, Quellen, Dialoge |
+| `src/domain.js` | Daten-/JSON-Validierung, vollständige Suche, exakte reine Rechenfunktionen, ID-/Schemaspezifikation |
+| `src/storage.js` | Eigener Speicherkey; Rohwertvergleich vor jedem Write; permanente Fehlersperre/Fremdänderungsschutz |
+| `src/app.js` | DOM ausschliesslich via textContent/Elementkonstruktion, echte Datenaktivierung, Suche, Dialoge, lokaler Arbeitsstand |
+| `src/styles.css` | Violett/dunkel, Reflow 320–1440+, Fokus und helle Druckregeln |
+| `public/data/catalog.json` | 15 vollständige Normpositionen, sechs Quellen und kurze Evidenztexte |
+| `scripts/acquire_sources.py` | Explizite öffentliche Quellen privat sichern; normaler Build führt nie Netzwerkzugriffe aus |
+| `scripts/source-pins.json` | Exakt gepinnte Quellenmetadaten |
+| `scripts/import_catalog.py` | Byte-/Hashprüfung und vollständiger Normimport; optionale PDF-Aufbereitung |
+| `scripts/files.mjs` | Export `runtimeFiles`: sieben Destination-zu-Quelle-Paare, einzig zulässige Runtime-Oberfläche |
+| `scripts/check.mjs` | Alle Eingaben prüfen, Kanonik/Provenienz/Navigation/Syntax validieren |
+| `scripts/build.mjs` | Zuerst vollständige Validierung, dann separater Stage und Ersetzen mit Rollback des vorherigen Builds |
+| `scripts/serve.mjs` | Export `createAppServer({root,basePath})`; nur GET/HEAD der Allowlist, MIME, CSP, no-sniff, Loopback beim CLI |
+| `tests/` | Registrierte Node-/Python-Offlinetests und separat registrierte native Browserabnahme |
+| `tests/browser.mjs` | 103 native Firefox-/Camoufox-Akzeptanzfälle (95 unveränderte + 8 zusätzliche); externe Playwright-/Binary-Auswahl per Umgebungsvariable, eigene Prozesse/Kontexte, eindeutige private Evidenz |
+| `scripts/public-files.json` | Explizites vollständiges Source-/Data-/Test-/Doc-Inventar für sauberen Public-Checkout |
+
+## Zustandsgrenzen
+
+Nur `pflegefinanzierung.workspace.v1` wird gelesen/geschrieben. Keine Migration fremder Katalogkeys, kein `localStorage.clear`, keine Konten. Der nicht gespeicherte Formularentwurf bleibt bei Speicherereignissen im Tab erhalten. Eine externe Änderung sperrt alle folgenden Writes; der rohe Fremdwert wird nicht eingelesen oder überschrieben. Bereits ausgeführte lokale Bearbeitungen bleiben als exportierbarer Arbeitsstand. Kein automatischer Reparatur-/Resetpfad für beschädigte Daten.
+
+JSON hat genau `schemaVersion`, `catalogVersion`, `bookmarks`, `scenarios`. Maximal 100 KB, 15 eindeutige gültige Beitrags-IDs, 50 eindeutige UUIDv4-Szenario-IDs, kanonische UTC-Zeitpunkte. Alle Felder und Typen einschliesslich inaktiver Formulareingaben werden validiert; unbekannte Felder/Versionen/IDs, doppelte IDs, beschädigte oder widersprüchliche Szenarien werden vollständig abgewiesen. Import zeigt vollständigen validierten JSON-Inhalt in einer nichtmutierenden Vorschau; Escape/Abbrechen verändert nichts. Eine Generation bindet Vorschau, Fehler und Dateiinput-Cleanup an die neueste Auswahl. Neue Wahl schliesst/invalidiert alte Vorschau; Abbruch, natives Escape und erfolgreiche Übernahme invalidieren ausstehende alte Antworten. Erst explizite Übernahme schreibt, mit erneuter Validierung und Rohwertvergleich. Gültige aktuelle Formulareingaben werden beim Export zusätzlich gesichert, sofern nicht bereits enthalten und unter dem Limit. Ungültige Entwürfe werden nicht heimlich exportiert; der Status nennt diese Einschränkung.
+
+`localStorage` bietet keine transaktionale Compare-and-swap-Schnittstelle. Der Schutz besteht aus genauem Rohvergleich unmittelbar vor synchronem Schreiben plus Storage-Ereignissperre; er beansprucht keinen atomaren serverseitigen Lock.
+
+## Runtime / Sicherheit
+
+Die Anwendung lädt nur ihre sieben lokalen Runtime-Dateien; externe Links sind reine Navigation. Keine API, Uploads, HTML-Interpolation, eval, Tracker oder Fremdskripte. Keine echten Gesundheitsdaten eingeben. Kein Service Worker. Ein Fetch-/Datenfehler erzeugt eine Fehlermeldung und deaktiviert Controls; `body.dataset.ready='true'` wird nur nach echtem Erfolg gesetzt.
+
+Build-Inputs werden auf Dateien, Symlinks/Rootausbruch, Syntax, explizite Zielpfade und konsistente Provenienz geprüft. Niemals rekursives Kopieren von `public/`. Der gemeinsame `validateCatalog` verlangt pro Zeile die primitive exakte Einheit `Stunde` (Spitex) beziehungsweise `Tag` (Heim); App-init und Check/Build verwenden denselben Validator vor Aktivierung/Ersetzung. Die Detailansicht liest diese geprüfte Preisbasis, Karten/Rechnerzuordnung bleiben kind-/ID-gebunden; Raten und Rechenlogik bleiben unverändert. Defekte Inputs berühren den letzten gültigen Build nicht. Kopierfehler passieren vor dessen Ersetzung; fehlgeschlagenes Umschalten stellt den alten Build wieder her. Auf dem Entwicklungsserver sind selbst existierende, nicht allowlistete Dateien nicht erreichbar.
+
+## Registrierte Tests
+
+- `tests/domain.test.mjs`: alle Minuten 0–10080 und Grenzen, offene höchste Stufe, Nullpflege, unbekannte Kosten, getrennte Finanzierung, rationale Rundung, drei Spitex-Raten/Einheiten/Mindestzeiten, Eingaben/Geldgrenzen, BAG-Abweichung, globale Suche, vollständiges striktes Importformat und manipulierte Daten.
+- `tests/storage.test.mjs`: nur eigener Key, kein Write beim Start, beschädigte/blockierte Rohwerte, Quota, externer Rohwertwechsel, Ereignissperre, nichtmutierende Kopien.
+- `tests/build-server.test.mjs`: exakte Allowlist, vier private Canaries, defekte/fehlende/symlinkte Inputs, alter gültiger Build, Pages-Unterpfad und exakte HTTP-Assetbytes, GET/HEAD/405/404 und Pfadschutz.
+- `tests/catalog-unit.test.mjs`: 37 registrierte Solltests; fehlende/null/falsche Einheiten und Typ-/Whitespace-Kontrollen in beiden Bereichen, tatsächlicher Validator/Build, alle sieben vorher gültigen Runtime-Dateien literal erhalten. Identische Harnessbytes unterstützen OLD/GREEN via `PF_TEST_ROOT`.
+- `tests/import-intent.test.mjs` mit `tests/helpers/import-intent.mjs`: 12 registrierte Sollfälle am tatsächlichen App-/Domain-/Storage-Modul. Frische gültige/ungültige/fehlerhafte Auswahl, ältere Erfolge/Fehler, Abbruch/Escape, aktuelle Übernahme und neuer noch lesender Input. Minimaler DOM-/Datei-I/O-Adapter, kein Browser; Kindprozess aus vorhandenem Node mit explizitem VM-Flag, ExperimentalWarning als Testgrenze.
+- `tests/test_import_catalog.py`: vollständige Reproduktion aus echten öffentlichen Normbelegen, fehlende Tabellenzeilen, geänderte Beträge/Intervalle, Pins und kein Hersteller-/Kantonsdatenkatalog.
+
+- `tests/browser.mjs`: **103 separat registrierte native Fälle (95 bestehende + 8 neue)** über `npm run test:browser`; kein Import von Produkt-Rechner/Parser/Suche als Erwartungsorakel. Alle 15 fest belegten Beträge, 6er-DOM-Paging, globale Suche/Filter, Details samt Norm/Version und tatsächlicher Rechnerübernahme; 0/20/21/220/221/offenes oberes Ende; manuelle Kosten, unbekannt gegenüber 0, getrennte Restfinanzierung und ordentlicher Gesamtbetrag; Spitex-5er-Einheiten/Mindestzeit, einmalige Tagesrundung einschliesslich Halb-Rappen und Gegenbeispiel zur zeilenweisen Rundung. Ungültige Eingaben dürfen weder rechnen noch speichern.
+- Native Arbeitsstandfälle benutzen echte Formular-/Bookmark-/Speicheraktionen und echte Browserdownloads, das tatsächliche Dateiinput sowie vollständige Vorschau/Abbruch/Übernahme/Reload/Szenario-Laden. Ein Fehler in einer späteren Importzeile, Typen, Namespaces, Versionen und IDs muss die ganze Datei vor Mutation abweisen. Ungültige aktuelle Entwürfe werden im Download ausgeschlossen und sichtbar benannt. Beschädigte/blockierte Originalbytes, Same-tab-Rohwertdrift und echte Zweitab-Speicherereignisse werden mit unfertigem Entwurf und neun fremden Rohwert-Sentinels geprüft. In den ursprünglichen 95 Fällen wird nur `Storage`-I/O zur Fehlererzeugung instrumentiert; ihre Assertion-Bodies bleiben bytegleich. Die acht zusätzlichen Fälle halten echte originale `File.text()`-Bytes am deklarierten I/O-Rand zurück beziehungsweise injizieren dort alte Lesefehler; keine Geschäfts-/Renderer-/Parser-/Preislogik wird ersetzt. Delayed A → neue B → Abbrechen/Escape → late A; alter Erfolg/Fehler vor und nach B-Übernahme; altes finally bei noch lesendem B. Echte Dateiinputs, Buttons, Escape, Downloads/raw/visible checks und alle Seiten-/Key-Monitore bleiben aktiv.
+- Native Darstellung: normale kanonische Links mit 3 Direkt-/6 standardmässig geschlossenen Disclosure-Links und genau einer aktuellen Seite; echte Tastaturaktionen. Je 1440/768/390/320px: Karten, Dialoganfang/-ende und Rechnerunterkante als Screenshots, horizontale Grenzen, DOM-Geometrie, 17px Formular-/Titel- und 18px Geldschrift sowie mindestens 24px Interaktionsziele. Echte Print-Schaltfläche mit Beobachter ausschliesslich an `window.print`; dessen `beforeprint`/`afterprint`-Ereignisse sind ausdrücklich Testinstrumentierung, kein OS-Druckdialog oder Spool. Helle Print-Media-Regeln mit tatsächlich sichtbaren Werten/Quellen und kein alter Ergebniswert nach Eingabeänderung. Kein CSV-Angebot, daher kein CSV-Test.
+
+`npm test` registriert nur die Offline-Node-/Python-Tests; `test:browser` registriert die native Suite gesondert. Es gibt keine versteckten npm-Abhängigkeiten. Browserfreie Runner-Prüfungen: `node --check tests/browser.mjs`, `npm run test:browser -- --list`, `--self-test` und (nach Build) `--preflight`. Sie starten weder Browser noch Server. Der normale native Lauf benötigt extern bereitgestelltes Playwright (`PLAYWRIGHT_MODULE`) und gegebenenfalls ein Binary (`BROWSER_EXECUTABLE`); siehe README. Er liest ausschliesslich den echten eigenen Build unter einem kurzlebigen Pages-Unterpfadserver, startet einen eigenen Headless-Prozess und schliesst Server, Browser und Kontexte sicher. Keine geteilte Browserinstanz und keine echten Katalognavigationsrequests zu fremden Origins.
+
+Jeder echte Lauf erzeugt ein neues `.local/browser/RUN-…/`. `report.json` enthält tatsächliche ausgeführte/bestandene/fehlgeschlagene/übersprungene Fälle, Node-/Browserversion, Suite-/Public-/Runtime-Hashes, alle rohen Konsolen-/Pageerror-/HTTP-/Transport-/Requestmethodenkanäle sämtlicher Seiten, Sentinel-Audits, echte Downloads mit Hashes, Geometrie und Screenshots sowie Cleanup-Ergebnisse. Der Runner verlangt `firefox.launch` und startet ein kompatibles Firefox-/Camoufox-Binary. Unbekannte Warnungen/Fehler, fremde Requests oder nicht ausgeführte Pflichtfälle verhindern Erfolg. Start-/Modulfehler bleiben Fehler mit übersprungenen Fällen, keine Native-Pass-Behauptung. Screenshots erfordern menschliche Pixelprüfung und der Runner ersetzt keine unabhängige fachliche/Qualitätsprüfung.
+
+**Inventar:** `scripts/public-files.json` listet jetzt **32** öffentliche Source-/Data-/Test-/Doc-Dateien einschliesslich `tests/browser.mjs`; das Runtime-Inventar bleibt unverändert bei **7** Dateien. Der Browserrunner, Dokumentation, Quellenrohbytes und `.local/` kommen nicht in `dist/`. Prüfstand: v2-Historie mit tatsächlich bestandenen 95 Parent-Fällen; kein v3-Native-PASS daraus abgeleitet. v3-Fälle nur authoriert/browserfrei geprüft, **native Ausführung aller 103 am neuen Kandidaten durch Parent noch ausstehend**. Danach erneut unabhängige SPEC-, dann QUALITY-Prüfung und offene Release-/CI-/Live-Gates. Keine Selbstfreigabe.
+
+## Sicheres Updateverfahren
+
+1. Neue Rohquellen zuerst privat sichern; alte Bytes für Reproduzierbarkeit behalten.
+2. Normstand, formellen Beitragsbeginn und BAG-/Normabweichung getrennt prüfen; keine automatischen Hersteller-/Kantonsannahmen.
+3. Pins, Datenversion, Importregeln, alle Validatoren und Tests gemeinsam bewusst aktualisieren.
+4. Daten aus exakt gepinnten Quellen reimportieren; öffentliche Provenienz muss mit Pins übereinstimmen.
+5. Check/Test/Build im frisch aus dem expliziten Public-Inventar erzeugten Offline-Checkout ausführen; Canaries und letzten gültigen Build prüfen.
+6. Danach native Browserabnahme, unabhängige Prüfung und erst anschliessend Freigabe durch die zuständige Publikationsrolle.

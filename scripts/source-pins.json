@@ -1,0 +1,74 @@
+[
+  {
+    "id": "bag",
+    "url": "https://www.bag.admin.ch/de/krankenversicherung-pflegeleistungen",
+    "resolvedUrl": "https://www.bag.admin.ch/de/krankenversicherung-pflegeleistungen",
+    "file": "bag.html",
+    "retrievedAt": "2026-10-22T03:41:30.576181+00:00",
+    "bytes": 821598,
+    "sha256": "cac94c732212ce00ddcac5979d6f1c1a919eff979c96e253b94bc6811488f1c7",
+    "title": "BAG: Krankenversicherung – Pflegeleistungen",
+    "legalAsOf": null,
+    "publishedAt": null
+  },
+  {
+    "id": "products",
+    "url": "https://besaqsys.ch/produkte",
+    "resolvedUrl": "https://besaqsys.ch/produkte",
+    "file": "products.html",
+    "retrievedAt": "2026-10-22T03:41:30.871723+00:00",
+    "bytes": 57718,
+    "sha256": "2e726a3fc7fa1c8c4c52942e0b6c9bad3d00d220ac0ef95a4b05c985f7e571ee",
+    "title": "BESA QSys: Produkte",
+    "legalAsOf": null,
+    "publishedAt": null
+  },
+  {
+    "id": "besa",
+    "url": "https://besaqsys.ch/besa-leistungen",
+    "resolvedUrl": "https://besaqsys.ch/besa-leistungen",
+    "file": "besa.html",
+    "retrievedAt": "2026-10-22T03:41:31.048996+00:00",
+    "bytes": 27230,
+    "sha256": "2c7ba3d3717b083b2c0a6a11af2cfeff49668d99d75129419fe0c4dec245f8d5",
+    "title": "BESA QSys: BESA Leistungen",
+    "legalAsOf": null,
+    "publishedAt": "2022-03-04"
+  },
+  {
+    "id": "klv",
+    "url": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/1995/4964_4964_4964/20260701/de/pdf-a/fedlex-data-admin-ch-eli-cc-1995-4964_4964_4964-20260701-de-pdf-a.pdf",
+    "resolvedUrl": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/1995/4964_4964_4964/20260701/de/pdf-a/fedlex-data-admin-ch-eli-cc-1995-4964_4964_4964-20260701-de-pdf-a.pdf",
+    "file": "klv-jul.pdf",
+    "retrievedAt": "2026-10-22T03:41:31.285111+00:00",
+    "bytes": 829598,
+    "sha256": "bddfe1ee27deb19da33e3a9248ba0044a3572ace0e72f2d75698ce17ddf1b852",
+    "title": "KLV, SR 832.112.31, Rechtsstand 1. Juli 2026",
+    "legalAsOf": "2026-07-01",
+    "publishedAt": null
+  },
+  {
+    "id": "kvg",
+    "url": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/1995/1328_1328_1328/20260701/de/pdf-a/fedlex-data-admin-ch-eli-cc-1995-1328_1328_1328-20260701-de-pdf-a.pdf",
+    "resolvedUrl": "https://www.fedlex.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/1995/1328_1328_1328/20260701/de/pdf-a/fedlex-data-admin-ch-eli-cc-1995-1328_1328_1328-20260701-de-pdf-a.pdf",
+    "file": "kvg-jul.pdf",
+    "retrievedAt": "2026-10-22T03:41:31.592045+00:00",
+    "bytes": 921585,
+    "sha256": "7e79243281283dfd297636759d67b4a15bb48387fdeb5a36043d7555b52faeb4",
+    "title": "KVG, SR 832.10, Rechtsstand 1. Juli 2026",
+    "legalAsOf": "2026-07-01",
+    "publishedAt": null
+  },
+  {
+    "id": "usage",
+    "url": "https://www.besaqsys.ch/sites/default/files/Downloads/BESA%20QSys-Richtlinien-BESA%20System.pdf",
+    "resolvedUrl": "https://besaqsys.ch/sites/default/files/Downloads/BESA%20QSys-Richtlinien-BESA%20System.pdf",
+    "file": "usage.pdf",
+    "retrievedAt": "2026-10-22T03:41:31.908371+00:00",
+    "bytes": 614763,
+    "sha256": "ab57bb8c487b031c618394d95f3f06a84c3daefdec3c6715fbf30d09603b6300",
+    "title": "BESA QSys: Richtlinien zur Nutzung des BESA Systems",
+    "legalAsOf": null,
+    "publishedAt": null
+  }
+]
