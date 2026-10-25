@@ -345,6 +345,41 @@ for(const old of ['success','error'])register(`import-intent-old-${old}-finally-
  const draft=await overlapDraft(p),before=await raw(p),b=overlapB();await deferNativeFileText(p,['A.json','B.json']);await heldUpload(p,overlapA(),'A.json');await heldUpload(p,b,'B.json');const selected=await p.locator('#import-json').inputValue();assert.ok(selected.endsWith('B.json'));await releaseNativeFile(p,'A.json',old==='error');assert.equal(await p.locator('#import-json').inputValue(),selected,'old finally reset current genuine file input');await hidden(p,'#import-dialog');assert.equal(await raw(p),before);await assertDraft(p,draft);await releaseNativeFile(p,'B.json');await confirmOverlapB(p,draft,b);await verifyOverlapDownloadAndReload(p,draft,b);
 },{seed:overlapSeed}));
 
+// JSON object member order is not scenario identity. Exercise the registered
+// import/load/export callers; keep literal field values and original metadata.
+register('export-reordered-import-does-not-duplicate-saved-scenario',()=>withPage(async p=>{
+ const s=input({name:'Gleiche Werte, andere JSON-Reihenfolge',care:'180',patient:'23',pension:'100',support:'20',ordinary:'50'});
+ const saved=entry({},7);saved.input=Object.fromEntries(Object.entries(s).reverse());
+ const w=workspace({bookmarks:['heim-12'],scenarios:[saved]});
+ const draft=input({name:'Unveränderter Entwurf vor Import',minutes:'21'});await fill(p,draft);const before=await raw(p);
+ await preview(p,w);await p.locator('#cancel-import').click();await hidden(p,'#import-dialog');assert.equal(await raw(p),before);await assertDraft(p,draft);
+ await preview(p,w);await p.keyboard.press('Escape');await hidden(p,'#import-dialog');assert.equal(await raw(p),before);await assertDraft(p,draft);
+ await preview(p,w);await p.locator('#confirm-import').click();await hidden(p,'#import-dialog');assert.deepEqual(JSON.parse(await raw(p)),w);await assertDraft(p,draft);
+ await p.reload({waitUntil:'networkidle'});await ready(p);await p.locator('#saved-scenarios').getByRole('button',{name:/laden$/}).click();await assertDraft(p,s);await assertResult(p,s);
+ const committed=await raw(p),out=await downloaded(p,'reordered-saved');
+ assert.equal(out.scenarios.length,1,'export must not add a second scenario solely because imported input keys have another order');
+ assert.deepEqual(out,w,'backup must preserve original ID, timestamp, literal values and bookmarks');assert.equal(await raw(p),committed);
+ await preview(p,out);assert.equal(await raw(p),committed);await p.locator('#confirm-import').click();await hidden(p,'#import-dialog');await assertDraft(p,s);
+ await p.reload({waitUntil:'networkidle'});await ready(p);assert.deepEqual(JSON.parse(await raw(p)),w);assert.equal(await p.locator('#saved-scenarios .saved-row').count(),1);
+}));
+register('export-reordered-import-retains-genuinely-different-literal-draft',()=>withPage(async p=>{
+ const s=input({name:'Literale Werte bleiben erhalten',days:'30',minutes:'80'}),saved=entry({},8);
+ saved.input=Object.fromEntries(Object.entries(s).reverse());const w=workspace({scenarios:[saved]});
+ await preview(p,w);await p.locator('#confirm-import').click();await hidden(p,'#import-dialog');
+ await p.reload({waitUntil:'networkidle'});await ready(p);await p.locator('#saved-scenarios').getByRole('button',{name:/laden$/}).click();
+ const changed={...s,days:'030'};await p.locator('#days').fill(changed.days);await assertDraft(p,changed);await assertResult(p,changed);const committed=await raw(p);
+ const out=await downloaded(p,'literal-difference');assert.equal(out.scenarios.length,2);assert.deepEqual(out.scenarios[0],saved);assert.deepEqual(out.scenarios[1].input,changed);assert.notEqual(out.scenarios[1].id,saved.id);assert.equal(await raw(p),committed);
+ await preview(p,out);await p.locator('#confirm-import').click();await hidden(p,'#import-dialog');await p.reload({waitUntil:'networkidle'});await ready(p);assert.deepEqual(JSON.parse(await raw(p)),out);assert.equal(await p.locator('#saved-scenarios .saved-row').count(),2);
+ await p.locator('#saved-scenarios .saved-row').nth(1).getByRole('button',{name:/laden$/}).click();await assertDraft(p,changed);
+}));
+register('export-at-scenario-limit-preserves-existing-reordered-snapshot',()=>withPage(async p=>{
+ const w=workspace({bookmarks:['spitex-c'],scenarios:Array.from({length:50},(_,i)=>{const e=entry({name:`Grenzkontrolle ${i+1}`,minutes:String(i+1)},i+1);e.input=Object.fromEntries(Object.entries(e.input).reverse());return e;})});
+ await preview(p,w);await p.locator('#confirm-import').click();await hidden(p,'#import-dialog');await p.reload({waitUntil:'networkidle'});await ready(p);
+ await p.locator('#saved-scenarios .saved-row').nth(49).getByRole('button',{name:/laden$/}).click();await assertDraft(p,w.scenarios[49].input);const committed=await raw(p);
+ assert.deepEqual(await downloaded(p,'at-limit-existing'),w);assert.equal(await raw(p),committed);
+ await p.locator('#scenario-name').fill('Neuer Entwurf bei voller Sicherung');assert.deepEqual(await downloaded(p,'at-limit-new-draft'),w);assert.equal(await raw(p),committed);await includes(p,'#workspace-notice','kein Platz; nur enthaltene Szenarien gesichert');
+}));
+
 async function preflight(){
  assert.equal(new Set(cases.map(c=>c.name)).size,cases.length,'duplicate case registration');
  assert.equal(Object.keys(runtimeFiles).length,7);

@@ -72,7 +72,7 @@ function renderSources(){
 }
 function exportJSON(){
  try{const snapshot=structuredClone(workspace);let included=false;
-  try{const draft=current();calculate(draft,catalog);if(!snapshot.scenarios.some(e=>JSON.stringify(e.input)===JSON.stringify(draft))){addScenario(snapshot,draft);included=true;}}catch{ /* Invalid draft is explicitly reported; saved workspace can still be exported. */ }
+  try{const draft=current();calculate(draft,catalog);if(!snapshot.scenarios.some(e=>fieldNames.every(k=>e.input[k]===draft[k]))){addScenario(snapshot,draft);included=true;}}catch{ /* Invalid draft is explicitly reported; saved workspace can still be exported. */ }
   validateWorkspace(snapshot,catalog);const blob=new Blob([JSON.stringify(snapshot,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='pflegefinanzierung-szenarien.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
   $('workspace-notice').textContent=`JSON erstellt: ${snapshot.bookmarks.length} Merkeinträge, ${snapshot.scenarios.length} Szenarien. ${included?'Gültiger aktueller Entwurf mitgesichert.':'Aktueller Entwurf bereits enthalten oder nicht gültig/kein Platz; nur enthaltene Szenarien gesichert.'}`;
  }catch(e){$('workspace-notice').textContent=e.message;}
