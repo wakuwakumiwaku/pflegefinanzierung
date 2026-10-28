@@ -18,6 +18,8 @@ npm start
 
 Danach `http://127.0.0.1:3011/` öffnen. `PORT` überschreibt den Port. Der Server läuft nur nach explizitem Start; Tests starten kurzlebige eigene Server und beenden sie wieder. Öffnen per `file://` ist nicht unterstützt, weil die JSON-Daten per Fetch geladen werden.
 
+Ein noch fehlendes oder zwischenzeitlich entferntes Build-Verzeichnis beendet den Preview-Server nicht: erlaubte GET-/HEAD-Anfragen liefern 404, nach Erstellen oder erneutem Build werden die Dateien wieder ausgeliefert. Allowlist und Pfadschutz bleiben dabei aktiv; der registrierte Lebenszyklustest prüft auch Start ohne vorherige Anfrage und die vollständige Testbereinigung.
+
 Alle drei Prüf-/Buildbefehle benötigen **keine Netzwerkverbindung, keine Rohquellen, kein vorhandenes dist und keine ignorierten Dateien**. `dist/` enthält nur sieben explizit erlaubte Runtime-Dateien. Private Canaries werden in Tests geprüft.
 
 ## Funktionen
@@ -63,7 +65,7 @@ Der Drucktest beobachtet die tatsächliche Schaltfläche ausschliesslich an der 
 
 **Prüfstand v3:** Die ursprünglichen 95 Fälle wurden vom Parent am eingefrorenen v2 tatsächlich bestanden; dies ist keine native v3-Abnahme. Die ursprünglichen Assertion-Bodies bleiben unverändert. Die acht neuen Fälle sind nur authoriert und browserfrei auf Registrierung/Syntax/Orakel/Build-Voraussetzungen geprüft; ein nativer v3-Lauf durch den Parent, erneute unabhängige SPEC- und danach QUALITY-Prüfung bleiben offen. Screenshots benötigen zusätzlich menschliche Pixelprüfung. Browserfreie Checks allein sind keine native Freigabe.
 
-`npm test` registriert zusätzlich 37 Einheiten-/Build-Regressionen und 12 Import-Intent-Fälle am tatsächlichen App-Modul (insgesamt 78 Node- und 9 Python-Tests). Der minimale DOM-/Datei-I/O-Adapter ist kein Browser. Der explizit gestartete Node-VM-Kindprozess verwendet `--experimental-vm-modules`; dessen ExperimentalWarning ist als Testgrenze getrennt bezeichnet, kein Produktfehler. Exakte kanonische Zeileneinheiten (`spitex` → `Stunde`, `heim` → `Tag`) sind Pflicht vor Aktivierung, Check und Build; ungültige Einheiten dürfen keine der sieben vorher gültigen Runtime-Dateien ersetzen.
+`npm test` registriert zusätzlich 37 Einheiten-/Build-Regressionen sowie 12 Import-Intent- und 24 Bookmark-/Renderingfälle am tatsächlichen App-Modul. Der minimale DOM-/Datei-/Speicher-I/O-Adapter ist kein Browser; Details und Grenzen stehen in der Codebasis-Anleitung. Der explizit gestartete Node-VM-Kindprozess verwendet `--experimental-vm-modules`; dessen ExperimentalWarning ist als Testgrenze getrennt bezeichnet, kein Produktfehler. Exakte kanonische Zeileneinheiten (`spitex` → `Stunde`, `heim` → `Tag`) sind Pflicht vor Aktivierung, Check und Build; ungültige Einheiten dürfen keine der sieben vorher gültigen Runtime-Dateien ersetzen.
 
 ## Quellen aktualisieren
 

@@ -41,6 +41,19 @@ function showDetail(row){
   switchMode();clearCalculation();$('detail-dialog').close();$('calculator').scrollIntoView();$('mode').focus();
  });container.append(use);$('detail-dialog').showModal();
 }
+function updateBookmark(button,row){
+ const marked=workspace.bookmarks.includes(row.id);button.textContent=marked?'Gemerkt ✓':'Merken';button.setAttribute('aria-pressed',String(marked));button.setAttribute('aria-label',`${row.title}: ${marked?'aus Merkliste entfernen':'merken'}`);
+}
+function toggleBookmark(row,button,card){
+ const ownedFocus=document.activeElement===button,index=Array.from($('results').children).indexOf(card);
+ workspace.bookmarks=workspace.bookmarks.includes(row.id)?workspace.bookmarks.filter(id=>id!==row.id):[...workspace.bookmarks,row.id];persist();
+ $('saved-scenarios').firstElementChild.textContent=savedHeading();
+ if(!$('bookmarked-only').checked){updateBookmark(button,row);return;}
+ renderRows();
+ // Removal changes membership: continue at the next slot (or previous at end),
+ // but never move focus on behalf of an action that did not own it.
+ if(ownedFocus){const buttons=$('results').querySelectorAll('button[aria-pressed]');(buttons[Math.min(index,buttons.length-1)]||$('bookmarked-only')).focus();}
+}
 function renderRows(){
  const rows=filterRows(catalog.rows,$('search').value,$('kind').value,$('bookmarked-only').checked?workspace.bookmarks:null);
  $('result-count').textContent=`${rows.length} von 15 Beiträgen · ${Math.min(limit,rows.length)} angezeigt`;
@@ -49,21 +62,22 @@ function renderRows(){
   const content=el('div');content.append(el('span',row.kind==='heim'?'PFLEGEHEIM · TAG':'SPITEX · STUNDE','eyebrow'),el('h3',row.title),el('p',interval(row)),el('small',row.legalRef));
   const actions=el('div',undefined,'card-actions');actions.append(el('strong',formatCHF(BigInt(row.rateCents)),'money'));
   const detail=el('button','Details');detail.type='button';detail.setAttribute('aria-label',`${row.title}: Details`);detail.addEventListener('click',()=>showDetail(row));
-  const bookmark=el('button',workspace.bookmarks.includes(row.id)?'Gemerkt ✓':'Merken');bookmark.type='button';bookmark.setAttribute('aria-pressed',String(workspace.bookmarks.includes(row.id)));bookmark.setAttribute('aria-label',`${row.title}: ${workspace.bookmarks.includes(row.id)?'aus Merkliste entfernen':'merken'}`);
-  bookmark.addEventListener('click',()=>{workspace.bookmarks=workspace.bookmarks.includes(row.id)?workspace.bookmarks.filter(id=>id!==row.id):[...workspace.bookmarks,row.id];persist();renderRows();});
+  const bookmark=el('button');bookmark.type='button';updateBookmark(bookmark,row);
+  bookmark.addEventListener('click',()=>toggleBookmark(row,bookmark,card));
   actions.append(detail,bookmark);card.append(content,actions);return card;
  });
  $('results').replaceChildren(...(nodes.length?nodes:[el('p','Keine passenden Beiträge. Filter zurücksetzen oder andere Suchbegriffe verwenden.')]));$('show-more').hidden=limit>=rows.length;
 }
 function status(){ $('storage-status').textContent=guard.message; $('confirm-import').disabled=guard.locked||!pendingImport; }
-function persist(){try{guard.write(workspace);}catch(e){$('workspace-notice').textContent=`Nur im aktuellen Entwurf: ${e.message}`;}status();renderSaved();}
+function persist(){try{guard.write(workspace);}catch(e){$('workspace-notice').textContent=`Nur im aktuellen Entwurf: ${e.message}`;}status();}
 function addScenario(target,input){calculate(input,catalog);if(target.scenarios.length>=50)throw Error('Maximal 50 Szenarien. Erst ein Szenario entfernen.');target.scenarios.push({id:`scenario-${crypto.randomUUID()}`,savedAt:new Date().toISOString(),input:structuredClone(input)});}
+function savedHeading(){return `Szenarien im Arbeitsstand (${workspace.scenarios.length}) · Merkliste (${workspace.bookmarks.length})`;}
 function renderSaved(){
- $('saved-scenarios').replaceChildren(el('h3',`Szenarien im Arbeitsstand (${workspace.scenarios.length}) · Merkliste (${workspace.bookmarks.length})`));
+ $('saved-scenarios').replaceChildren(el('h3',savedHeading()));
  for(const entry of workspace.scenarios){const line=el('div',undefined,'saved-row');line.dataset.id=entry.id;
   const text=el('p',`${entry.input.name||'Unbenanntes Szenario'} · ${entry.input.mode==='heim'?'Pflegeheim':'Spitex'} · ${entry.input.days} Tage`);
   const load=el('button','Laden');load.type='button';load.setAttribute('aria-label',`${entry.input.name||'Szenario'} laden`);load.addEventListener('click',()=>{fill(entry.input);runCalculation();$('calculator').scrollIntoView();});
-  const remove=el('button','Entfernen');remove.type='button';remove.setAttribute('aria-label',`${entry.input.name||'Szenario'} entfernen`);remove.addEventListener('click',()=>{workspace.scenarios=workspace.scenarios.filter(e=>e.id!==entry.id);persist();});line.append(text,load,remove);$('saved-scenarios').append(line);
+  const remove=el('button','Entfernen');remove.type='button';remove.setAttribute('aria-label',`${entry.input.name||'Szenario'} entfernen`);remove.addEventListener('click',()=>{workspace.scenarios=workspace.scenarios.filter(e=>e.id!==entry.id);persist();renderSaved();});line.append(text,load,remove);$('saved-scenarios').append(line);
  }
 }
 function renderSources(){
@@ -93,7 +107,7 @@ async function init(){
  $('search').addEventListener('input',()=>{limit=6;renderRows();});for(const id of ['kind','bookmarked-only'])$(id).addEventListener('change',()=>{limit=6;renderRows();});
  $('reset-search').addEventListener('click',()=>{$('search').value='';$('kind').value='all';$('bookmarked-only').checked=false;limit=6;renderRows();});$('show-more').addEventListener('click',()=>{limit+=6;renderRows();});
  $('close-detail').addEventListener('click',()=>$('detail-dialog').close());$('mode').addEventListener('change',switchMode);$('scenario-form').addEventListener('input',clearCalculation);$('scenario-form').addEventListener('change',clearCalculation);$('scenario-form').addEventListener('submit',e=>{e.preventDefault();runCalculation();});$('reset-scenario').addEventListener('click',()=>fill(defaultScenario()));
- $('save-scenario').addEventListener('click',()=>{try{addScenario(workspace,current());persist();$('workspace-notice').textContent=guard.locked?'Szenario nur im Entwurf; JSON sichern.':'Szenario lokal gespeichert.';}catch(e){showError(e);}});
+ $('save-scenario').addEventListener('click',()=>{try{addScenario(workspace,current());persist();renderSaved();$('workspace-notice').textContent=guard.locked?'Szenario nur im Entwurf; JSON sichern.':'Szenario lokal gespeichert.';}catch(e){showError(e);}});
  $('export-json').addEventListener('click',exportJSON);$('import-json').addEventListener('change',e=>importJSON(e.target.files[0]));$('cancel-import').addEventListener('click',()=>{invalidateImport();$('import-dialog').close();});$('import-dialog').addEventListener('cancel',invalidateImport);
  $('confirm-import').addEventListener('click',()=>{try{if(!pendingImport||guard.locked)throw Error('Übernahme gesperrt.');const validated=validateWorkspace(pendingImport,catalog);guard.write(validated);workspace=validated;invalidateImport();$('import-dialog').close();status();renderRows();renderSaved();$('workspace-notice').textContent='Geprüfte JSON-Daten lokal übernommen; Formulareingaben unverändert.';}catch(e){status();$('workspace-notice').textContent=`Nicht übernommen: ${e.message}`;}});
  $('print').addEventListener('click',()=>window.print());window.addEventListener('storage',event=>{if(event.key===STORAGE_KEY||event.key===null){guard.externalChange();status();}});

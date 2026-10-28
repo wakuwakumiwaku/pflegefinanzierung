@@ -5,7 +5,8 @@ import {fileURLToPath} from 'node:url';
 const root=process.env.PF_TEST_ROOT||fileURLToPath(new URL('../',import.meta.url));
 const adapter=fileURLToPath(new URL('./helpers/import-intent.mjs',import.meta.url));
 const cases=['fresh-success-confirm','fresh-invalid','fresh-read-error','late-success-after-cancel','late-success-after-escape','old-error-new-confirm','old-success-new-confirm','old-finally-new-read','old-error-finally-new-read','late-success-after-confirm','late-error-after-confirm','new-selection-invalidates-old-preview'];
-for(const name of cases)test(`PF-SPEC-02 actual app intent: ${name}`,t=>{
+const bookmarks=['ordinary','ordinary-checked','ordinary-unfocused','max-scenarios','favorite-first','favorite-middle','favorite-last','favorite-only','favorite-first-unfocused','favorite-last-unfocused','favorite-only-unfocused','favorite-page-backfill','favorite-expanded-page','favorite-final-page','filtered-page','filtered-empty','corrupt-storage','blocked-access','blocked-read','blocked-write','foreign-raw','storage-event','scenario-add-remove','import-rebuild'].map(name=>'bookmark-'+name);
+for(const name of [...cases,...bookmarks])test(`PF actual app intent/rendering: ${name}`,t=>{
  const p=spawnSync(process.execPath,['--experimental-vm-modules',adapter,root,name],{encoding:'utf8'});
  // Keep VM warning explicitly separate from product diagnostics. Only this known
  // Node test-boundary warning is allowed; preserve all original streams in runs.
