@@ -2,6 +2,8 @@
 
 Die Suche behandelt deutsche Umlautschreibweisen (etwa «Abklärung» und «Abklaerung») sowie zusammengesetzte und zerlegte Unicode-Zeichen gleich. Tariftexte und Filter bleiben unverändert.
 
+Beim Neustart beginnt der Rechner mit den deklarierten leeren Standardfeldern statt mit von Firefox wiederhergestellten ungespeicherten Kostenannahmen. Gespeicherte Szenarien und Merklisten bleiben erhalten und lassen sich weiterhin bewusst laden.
+
 Unabhängiger deutschsprachiger Browser für die **vollständigen gesetzlichen Bundesbeiträge** an Pflegeleistungen: zwölf Pflegeheimstufen und drei Spitex-Stundensätze. Dazu ein exakter, bewusst begrenzter Szenariorechner und eine ausschliesslich lokale Merkliste.
 
 **Kein BESA-/RAI-Assessment und kein Nachbau lizenzierter Instrumente.** Keine Herstellerfragebögen oder Leistungskataloge, keine kantonalen Fantasietarife, keine Patientenakten und keine Erstattungszusage.

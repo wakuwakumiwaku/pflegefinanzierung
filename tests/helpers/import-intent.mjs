@@ -66,6 +66,9 @@ const html=await readFile(root+'/index.html','utf8');
 for(const m of html.matchAll(/<([a-z][\w-]*)\b[^>]*\bid="([^"]+)"[^>]*>/gi)){const n=new Element(m[2],m[1]);nodes.set(n.id,n);document.body.append(n);}
 for(const [k,v] of Object.entries(domain.defaultScenario()))get(k==='name'?'scenario-name':k).value=v;
 get('kind').value='all';
+// Model Firefox restoring unsaved form controls before the app finishes booting.
+if(scenario==='restored-initial-form'){for(const [k,v] of Object.entries({...domain.defaultScenario(),name:'Unsaved old draft',mode:'spitex',days:'9',minutes:'80',a:'10',care:'180',patient:'10'}))get(k==='name'?'scenario-name':k).value=v;}
+if(scenario.endsWith('initial-form'))loaded.scenarios=[savedEntry(1)];
 const initial=spec?.fault==='corrupt'?' \n{broken original bytes  ':' \n'+JSON.stringify(loaded)+'  ';
 const foreign=Object.fromEntries(['dentotar','migel','sl','analysenliste','arzneimittelliste','arzttarife','physiotherapie','spitaltarife'].map(k=>[k+'.workspace.v1',' foreign '+k+'\n']));
 const raw=new Map([...Object.entries(foreign),[domain.STORAGE_KEY,initial]]),writes=[],reads=[],attempts=[];
@@ -78,6 +81,13 @@ const synth=object=>new vm.SyntheticModule(Object.keys(object),function(){for(co
 context.fetch=async()=>({ok:true,json:async()=>structuredClone(catalog)});
 await app.link(spec=>{assert.ok(['./domain.js','./storage.js'].includes(spec));return synth(spec==='./domain.js'?domain:storage);});await app.evaluate();
 for(let i=0;i<20&&document.body.dataset.ready!=='true';i++)await new Promise(r=>setImmediate(r));assert.equal(document.body.dataset.ready,'true');
+if(scenario.endsWith('initial-form')){
+ const values=Object.fromEntries(Object.keys(domain.defaultScenario()).map(k=>[k,get(k==='name'?'scenario-name':k).value]));
+ assert.deepEqual(values,domain.defaultScenario(),'startup must initialize the declared empty form, not a browser-restored unsaved scenario');
+ assert.equal(get('heim-fields').hidden,false);assert.equal(get('spitex-fields').hidden,true);
+ assert.equal(writes.length,0);assert.equal(raw.get(domain.STORAGE_KEY),initial);assert.equal(get('saved-scenarios').children.length,2);
+ console.log(JSON.stringify({case:scenario,passed:true,boundary:'actual app ESM with synthetic restored DOM controls',writes:0}));
+}else{
 get('scenario-name').value='ungesicherter Entwurf';get('minutes').value='21';
 const draft=()=>JSON.stringify(Object.fromEntries(Object.keys(domain.defaultScenario()).map(k=>[k,get(k==='name'?'scenario-name':k).value]))),beforeDraft=draft();
 const A={...domain.emptyWorkspace(),bookmarks:['heim-01']},B={...domain.emptyWorkspace(),bookmarks:['heim-12']};
@@ -167,3 +177,4 @@ if(spec){
 }
 if(preserveDraft)assert.equal(draft(),beforeDraft,'dirty form changed');for(const [k,v] of Object.entries(foreign))assert.equal(raw.get(k),v);assert.ok(writes.every(w=>w.key===domain.STORAGE_KEY));
 console.log(JSON.stringify({case:scenario,passed:true,boundary:'actual app ESM; minimal DOM and deferred File.text / storage I/O adapter; no native browser',writes:writes.length,dirtyDraftPreserved:preserveDraft,foreignKeysPreserved:8}));
+}
