@@ -30,5 +30,6 @@
   "tests/helpers/import-intent.mjs",
   "tests/import-intent.test.mjs",
   "tests/storage.test.mjs",
+  "tests/storage-readback.test.mjs",
   "tests/test_import_catalog.py"
 ]

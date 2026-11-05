@@ -34,6 +34,8 @@ Alle drei Prüf-/Buildbefehle benötigen **keine Netzwerkverbindung, keine Rohqu
 - Speicherfehler, beschädigte Rohwerte und Cross-tab-Änderungen sperren Schreibzugriff statt zu reparieren. Der aktuelle Formularentwurf bleibt erhalten und kann bei gültigen Werten als JSON gerettet werden.
 - Violett/dunkel, Systemfonts, responsive Reflow und helle Druckregeln; keine Tracker, externen Skripte, Konten oder Upload-API.
 
+Jeder Schreibvorgang wird vor der Erfolgsmeldung über denselben Speicherschlüssel zurückgelesen. Abweichende oder nicht mehr lesbare Bytes sperren weitere Schreibversuche; es gibt keinen automatischen Reparaturversuch. Ein bereits erfolgter Schreibaufruf wird dabei nicht zurückgerollt.
+
 ## Rechts-/Datenstand und wichtige Grenze
 
 Gepinnte KLV-/KVG-Fassung: **01.07.2026**. Beitragssätze des Art. 7a Abs. 1/3 KLV gelten seit **01.01.2020**. Abruf und Rechtsstand sind getrennt. Originale können inzwischen neuer sein.

@@ -13,6 +13,8 @@ export function createStorageGuard(storage,catalog){
    try{if(storage.getItem(STORAGE_KEY)!==baseline){locked=true;message='Speicher wurde extern verändert. Entwurf bleibt erhalten; nicht überschrieben.';throw Error(message);}}
    catch(e){locked=true;if(!message.includes('extern'))message='Speicherzugriff nicht möglich. Entwurf bleibt erhalten.';throw Error(message);}
    try{storage.setItem(STORAGE_KEY,raw);}catch{locked=true;message='Speichern blockiert oder Speicher voll. Entwurf bleibt erhalten.';throw Error(message);}
+   try{if(storage.getItem(STORAGE_KEY)!==raw)throw Error('Schreibinhalt nicht bestätigt.');}
+   catch{locked=true;message='Speicherprüfung nach dem Schreiben fehlgeschlagen. Lokale Sicherung nicht bestätigt; Entwurf als JSON sichern. Keine weiteren Schreibversuche.';throw Error(message);}
    baseline=raw;workspace=validated;message='Lokal gesichert (nur dieses Gerät / dieser Browser).';return this.workspace;
   }
  };
