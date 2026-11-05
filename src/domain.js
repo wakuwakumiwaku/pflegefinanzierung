@@ -80,7 +80,8 @@ export function validateCatalog(c){
  for(const s of c.sources){const u=new URL(s.url);if(u.protocol!=='https:'||u.username||u.password||u.port||!hosts.has(u.hostname)||typeof s.title!=='string'||!(/^[a-f0-9]{64}$/).test(s.sha256)||!Number.isInteger(s.bytes)||s.bytes<=0||!Number.isFinite(Date.parse(s.retrievedAt)))throw Error('Ungültige Quellenprovenienz.');}
  return c;
 }
+function searchText(value){return value.normalize('NFC').toLocaleLowerCase('de-CH').replaceAll('ä','ae').replaceAll('ö','oe').replaceAll('ü','ue').replaceAll('ß','ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 export function filterRows(rows,query='',kind='all',bookmarks=null){
- const q=query.trim().toLocaleLowerCase('de-CH').split(/\s+/).filter(Boolean);
- return rows.filter(r=>(kind==='all'||r.kind===kind)&&(!bookmarks||bookmarks.includes(r.id))&&q.every(w=>`${r.id} ${r.title} ${r.legalRef} ${r.stage??''} ${r.minMinutes??''} ${r.maxMinutes??(r.kind==='heim'?'mehr als 220':'')} ${formatCHF(BigInt(r.rateCents))} ${r.kind==='heim'?'Pflegeheim stationär':'Spitex ambulant'} ${r.id==='spitex-b'?'Behandlungspflege':''}`.toLocaleLowerCase('de-CH').includes(w)));
+ const q=searchText(query).trim().split(/\s+/).filter(Boolean);
+ return rows.filter(r=>(kind==='all'||r.kind===kind)&&(!bookmarks||bookmarks.includes(r.id))&&q.every(w=>searchText(`${r.id} ${r.title} ${r.legalRef} ${r.stage??''} ${r.minMinutes??''} ${r.maxMinutes??(r.kind==='heim'?'mehr als 220':'')} ${formatCHF(BigInt(r.rateCents))} ${r.kind==='heim'?'Pflegeheim stationär':'Spitex ambulant'} ${r.id==='spitex-b'?'Behandlungspflege':''}`).includes(w)));
 }

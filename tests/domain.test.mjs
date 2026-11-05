@@ -22,3 +22,14 @@ test('workspace roundtrip is full, clone-based and nonmutating',()=>{const w=emp
 test('workspace rejects extra/missing/types/version/IDs at every level',()=>{const good={...emptyWorkspace(),scenarios:[entry()]};const mutations=[w=>w.unknown=1,w=>delete w.bookmarks,w=>w.schemaVersion='1',w=>w.catalogVersion='future',w=>w.bookmarks=['heim-00'],w=>w.bookmarks=['heim-01','heim-01'],w=>w.scenarios[0].id='invented',w=>w.scenarios[0].savedAt='2026-02-31T00:00:00.000Z',w=>w.scenarios[0].input.extra='x',w=>w.scenarios[0].input.days=30,w=>w.scenarios[0].input.a='bad',w=>w.scenarios[0].extra=1,w=>w.scenarios.push(structuredClone(w.scenarios[0]))];for(const mutate of mutations){const w=structuredClone(good);mutate(w);assert.throws(()=>validateWorkspace(w,catalog));}assert.throws(()=>parseWorkspace('x'.repeat(100001),catalog));assert.throws(()=>parseWorkspace('{',catalog));});
 test('untrusted literal name is retained as text, not evaluated',()=>{const w=emptyWorkspace();w.scenarios=[entry(scenario({name:'<img src=x onerror=alert(1)>'}))];assert.equal(validateWorkspace(w,catalog).scenarios[0].input.name,w.scenarios[0].input.name);});
 test('corrupt tariff/catalog/source data cannot activate',()=>{for(const mutate of [c=>c.rows.pop(),c=>c.rows[0].rateCents=0,c=>c.rows[14].maxMinutes=240,c=>c.version='unknown',c=>c.sources[0].url='javascript:alert(1)',c=>c.sources[0].sha256='_'.repeat(64),c=>c.sources[0].id='fake',c=>c.extra=1]){const c=structuredClone(catalog);mutate(c);assert.throws(()=>validateCatalog(c));}});
+
+test('German umlaut spelling and canonical Unicode search share the same matches',()=>{
+ const before=JSON.stringify(catalog.rows);
+ for(const q of ['Abklärung','Abklaerung','ABKLAERUNG','Abkla\u0308rung'])assert.deepEqual(filterRows(catalog.rows,q).map(r=>r.id),['spitex-a'],q);
+ for(const q of ['Abklaerung Koordination','Abkla\u0308rung Beratung'])assert.deepEqual(filterRows(catalog.rows,q,'spitex',['spitex-a']).map(r=>r.id),['spitex-a'],q);
+ assert.deepEqual(filterRows(catalog.rows,'Abklaerung','heim'),[]);
+ assert.deepEqual(filterRows(catalog.rows,'Abklaerung','all',['heim-01']),[]);
+ assert.deepEqual(filterRows(catalog.rows,'Behandlung').map(r=>r.id),['spitex-b']);
+ assert.deepEqual(filterRows(catalog.rows,'115.20').map(r=>r.id),['heim-12']);
+ assert.equal(JSON.stringify(catalog.rows),before);
+});

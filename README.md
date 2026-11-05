@@ -1,5 +1,7 @@
 # Pflegefinanzierung
 
+Die Suche behandelt deutsche Umlautschreibweisen (etwa «Abklärung» und «Abklaerung») sowie zusammengesetzte und zerlegte Unicode-Zeichen gleich. Tariftexte und Filter bleiben unverändert.
+
 Unabhängiger deutschsprachiger Browser für die **vollständigen gesetzlichen Bundesbeiträge** an Pflegeleistungen: zwölf Pflegeheimstufen und drei Spitex-Stundensätze. Dazu ein exakter, bewusst begrenzter Szenariorechner und eine ausschliesslich lokale Merkliste.
 
 **Kein BESA-/RAI-Assessment und kein Nachbau lizenzierter Instrumente.** Keine Herstellerfragebögen oder Leistungskataloge, keine kantonalen Fantasietarife, keine Patientenakten und keine Erstattungszusage.
