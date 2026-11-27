@@ -34,6 +34,8 @@ const bookmarkCases={
  'bookmark-blocked-write':{fault:'write',count:50},
  'bookmark-foreign-raw':{fault:'foreign',count:50},
  'bookmark-storage-event':{fault:'event',count:50},
+ 'bookmark-local-storage-clear':{fault:'clear'},
+ 'bookmark-unrelated-storage-events':{},
  'bookmark-scenario-add-remove':{count:1},
  'bookmark-import-rebuild':{count:1}
 };
@@ -74,7 +76,8 @@ const foreign=Object.fromEntries(['dentotar','migel','sl','analysenliste','arzne
 const raw=new Map([...Object.entries(foreign),[domain.STORAGE_KEY,initial]]),writes=[],reads=[],attempts=[];
 const local={getItem(k){reads.push(k);if(spec?.fault==='read')throw Error('blocked read');return raw.has(k)?raw.get(k):null;},setItem(k,v){attempts.push(k);if(spec?.fault==='write')throw Error('blocked write');writes.push({key:k,raw:v});raw.set(k,v);}};
 const windowEvents={};
-const window={get localStorage(){if(spec?.fault==='access')throw Error('blocked access');return local;},addEventListener(type,f){(windowEvents[type]??=[]).push(f);}};
+const window={sessionStorage:{},get localStorage(){if(spec?.fault==='access')throw Error('blocked access');return local;},addEventListener(type,f){(windowEvents[type]??=[]).push(f);}};
+function storageEvent(storageArea,key){for(const listener of windowEvents.storage||[])listener({storageArea,key});}
 const context=vm.createContext({document,window,URL,Blob,structuredClone,crypto:globalThis.crypto,setTimeout,console});
 const app=new vm.SourceTextModule(source,{context,initializeImportMeta(meta){meta.url=pathToFileURL(root+'/src/app.js').href;}});
 const synth=object=>new vm.SyntheticModule(Object.keys(object),function(){for(const [k,v]of Object.entries(object))this.setExport(k,v);},{context});
@@ -111,7 +114,15 @@ if(spec){
  const loadedCount=['access','read','corrupt'].includes(spec.fault)?0:loaded.scenarios.length;
  const initialBookmarks=['access','read','corrupt'].includes(spec.fault)?[]:loaded.bookmarks;
  if(spec.fault==='foreign')raw.set(domain.STORAGE_KEY,' foreign same-key raw bytes \n');
- if(spec.fault==='event'){raw.set(domain.STORAGE_KEY,' other tab raw bytes \n');for(const listener of windowEvents.storage)listener({key:domain.STORAGE_KEY});}
+ if(scenario==='bookmark-unrelated-storage-events'||spec.fault==='access'){
+  const before=get('storage-status').textContent;
+  for(const [area,key] of [[window.sessionStorage,domain.STORAGE_KEY],[window.sessionStorage,null],[local,'unrelated']]){
+   storageEvent(area,key);assert.equal(get('storage-status').textContent,before,`unrelated storage notification changed status (key: ${key})`);
+  }
+ }
+ if(spec.fault==='event'){raw.set(domain.STORAGE_KEY,' other tab raw bytes \n');storageEvent(local,domain.STORAGE_KEY);}
+ if(spec.fault==='clear'){raw.clear();storageEvent(local,null);}
+ if(spec.fault==='event'||spec.fault==='clear')assert.match(get('storage-status').textContent,/Fremdänderung/,'workspace conflict must lock before the next write');
  const protectedRaw=raw.get(domain.STORAGE_KEY);
  if(spec.only){
   get('kind').value=spec.kind||'all';get('search').value=spec.query||'';
@@ -175,6 +186,6 @@ if(spec){
  }
  default:throw Error('unknown case '+scenario);
 }
-if(preserveDraft)assert.equal(draft(),beforeDraft,'dirty form changed');for(const [k,v] of Object.entries(foreign))assert.equal(raw.get(k),v);assert.ok(writes.every(w=>w.key===domain.STORAGE_KEY));
-console.log(JSON.stringify({case:scenario,passed:true,boundary:'actual app ESM; minimal DOM and deferred File.text / storage I/O adapter; no native browser',writes:writes.length,dirtyDraftPreserved:preserveDraft,foreignKeysPreserved:8}));
+if(preserveDraft)assert.equal(draft(),beforeDraft,'dirty form changed');for(const [k,v] of Object.entries(foreign))assert.equal(raw.get(k),spec?.fault==='clear'?undefined:v);assert.ok(writes.every(w=>w.key===domain.STORAGE_KEY));
+console.log(JSON.stringify({case:scenario,passed:true,boundary:'actual app ESM; minimal DOM and deferred File.text / storage I/O adapter; no native browser',writes:writes.length,dirtyDraftPreserved:preserveDraft,foreignKeysPreserved:spec?.fault==='clear'?0:8}));
 }

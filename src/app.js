@@ -110,7 +110,11 @@ async function init(){
  $('save-scenario').addEventListener('click',()=>{try{addScenario(workspace,current());persist();renderSaved();$('workspace-notice').textContent=guard.locked?'Szenario nur im Entwurf; JSON sichern.':'Szenario lokal gespeichert.';}catch(e){showError(e);}});
  $('export-json').addEventListener('click',exportJSON);$('import-json').addEventListener('change',e=>importJSON(e.target.files[0]));$('cancel-import').addEventListener('click',()=>{invalidateImport();$('import-dialog').close();});$('import-dialog').addEventListener('cancel',invalidateImport);
  $('confirm-import').addEventListener('click',()=>{try{if(!pendingImport||guard.locked)throw Error('Übernahme gesperrt.');const validated=validateWorkspace(pendingImport,catalog);guard.write(validated);workspace=validated;invalidateImport();$('import-dialog').close();status();renderRows();renderSaved();$('workspace-notice').textContent='Geprüfte JSON-Daten lokal übernommen; Formulareingaben unverändert.';}catch(e){status();$('workspace-notice').textContent=`Nicht übernommen: ${e.message}`;}});
- $('print').addEventListener('click',()=>window.print());window.addEventListener('storage',event=>{if(event.key===STORAGE_KEY||event.key===null){guard.externalChange();status();}});
+ $('print').addEventListener('click',()=>window.print());
+ window.addEventListener('storage',event=>{
+  if(event.storageArea!==storage||(event.key!==STORAGE_KEY&&event.key!==null))return;
+  guard.externalChange();status();
+ });
  renderRows();renderSaved();renderSources();fill(defaultScenario());status();$('load-status').textContent='15 Bundesbeiträge geladen · bereit';document.body.dataset.ready='true';
 }
 init().catch(e=>{$('load-status').textContent=`Fehler: ${e.message} Keine Daten aktiv. Bitte neu laden oder Originalquellen prüfen.`;$('load-status').setAttribute('role','alert');for(const n of document.querySelectorAll('button,input,select'))n.disabled=true;});
